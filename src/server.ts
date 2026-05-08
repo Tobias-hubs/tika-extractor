@@ -15,7 +15,8 @@ if (!TIKA_URL) {
 }
 
 function parseDocument(raw: string) {
-    raw = decode(raw);
+    
+    raw = decode(raw).replace(/&amp;/g, "&");
 
     const cheerioParse = cheerio.load(raw);
 
@@ -34,6 +35,7 @@ function parseDocument(raw: string) {
         let type = "paragraph";
 
         const words = text.split(" ").length; 
+
         if (words < 10 && text.length < 100 && !text.endsWith(".")) { 
             type = "heading"; 
         }
@@ -50,10 +52,14 @@ function parseDocument(raw: string) {
     });
 
     // Remove duplicates
-    const seen = new Set(); 
-    const uniqueParagraphs = paragraphs.filter(p => { 
-        if (seen.has(p.text)) return false; 
-        seen.add(p.text);
+    const seen = new Set<string>(); 
+    const cleanedParagraphs = paragraphs.filter((p) => { 
+        const lower = p.text.toLowerCase();
+
+        if (seen.has(lower)) return false; 
+        seen.add(lower);
+
+        if (p.text.length < 3) return false;
         return true;
     }); 
 
@@ -65,7 +71,7 @@ function parseDocument(raw: string) {
 
     let currentSection: { heading: string; content: string[] } | null = null;
 
-    uniqueParagraphs.forEach(p => {
+    cleanedParagraphs.forEach(p => {
         if (p.type === "heading") {
             currentSection = {
                 heading: p.text,
@@ -77,11 +83,11 @@ function parseDocument(raw: string) {
         }
     });
 
-    const text = uniqueParagraphs.map(p => p.text).join("\n\n");
+    const text = cleanedParagraphs.map(p => p.text).join("\n\n");
 
     return {
         text,
-        paragraphs: uniqueParagraphs,
+        paragraphs: cleanedParagraphs,
         sections
     };
 }
