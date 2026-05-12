@@ -92,7 +92,7 @@ function parseDocument(raw: string) {
     };
 }
 
-// API endpint 
+// API endpoint 
 app.post("/extract", upload.single("file"), async (req: any, res: any) => {
     try { 
         const file = req.file?.buffer; 
