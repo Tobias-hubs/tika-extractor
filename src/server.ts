@@ -4,10 +4,17 @@ import multer from "multer";
 import axios from "axios";
 import { decode } from "html-entities";
 import * as cheerio from "cheerio";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const app = express();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const upload = multer();
 
+app.use(express.static(path.join(__dirname, "../public")));
 const TIKA_URL = process.env.TIKA_URL!;
 
 if (!TIKA_URL) {

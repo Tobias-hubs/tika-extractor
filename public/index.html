@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <title>Tika Document Extractor (Demo)</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 40px;
+    }
+    pre {
+      white-space: pre-wrap;
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 4px;
+      max-height: 70vh;
+      overflow: auto;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Tika Document Extractor</h2>
+
+<input type="file" id="fileInput" />
+<button onclick="extract()">Extract</button>
+
+<!-- Add copy button for "text"  -->
+ <!-- Add copy button for "paragraphs" -->
+
+<h3>Response</h3>
+<pre id="output">No result yet</pre>
+
+<script>
+async function extract() {
+  const fileInput = document.getElementById("fileInput");
+  const output = document.getElementById("output");
+
+  if (!fileInput.files.length) {
+    alert("Select a file first");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("file", fileInput.files[0]); 
+
+  output.textContent = "Processing...";
+
+  try {
+    const res = await fetch("http://localhost:3000/extract", {
+      method: "POST",
+      body: formData
+    });
+
+    const json = await res.json();
+    output.textContent = JSON.stringify(json, null, 2);
+  } catch (err) {
+    output.textContent = "Error: " + err.message;
+  }
+}
+</script>
+
+</body>
+</html>
