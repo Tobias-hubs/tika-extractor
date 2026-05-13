@@ -1,3 +1,5 @@
+
+/*
 import "dotenv/config";
 import axios from "axios";
 import fs from "fs";
@@ -110,4 +112,4 @@ async function run () {
 }
 
 
-run();
+run(); */

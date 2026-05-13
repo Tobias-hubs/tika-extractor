@@ -31,12 +31,52 @@ function parseDocument(raw: string) {
         id: number; 
         text: string; 
         type: string; 
+        page: number | null; 
     }[] = [];
 
-    cheerioParse("p").each((index, element) => {
-        let text = cheerioParse(element).text().trim();
 
+    // Check if document has <div class="page"> breaks
+    let hasPage = cheerioParse(".page").length > 0; 
+    let globalIndex = 1; 
+
+    if (hasPage) { 
+        // (usually only PDF format) with page breaks
+        cheerioParse(".page").each((pageIndex, pageElement) => { 
+            const pageNumber = pageIndex + 1;
+
+            cheerioParse(pageElement).find("p").each((_, element) => { 
+                let text = cheerioParse(element).text().trim();
+
+                if (!text) return; 
+
+                text = text.replace(/\n/g, " ");
+
+                let type = "paragraph"; 
+                const words = text.split(" ").length;
+
+                if (words < 10 && text.length < 100 && !text.endsWith(".")) {
+                    type = "heading";
+                }
+
+                if (/^(\d+\.|-|\*)/.test(text)) {
+                    type = "list-item";
+                }
+
+                paragraphs.push({
+                    id: globalIndex++, 
+                    text, 
+                    type, 
+                    page: pageNumber
+            });
+        });
+         });
+    } else { 
+
+        // Fallback for documents without page breaks (like Word docs docx)
+    cheerioParse("p").each((_, element) => {
+        let text = cheerioParse(element).text().trim();
         if (!text) return;
+        
         text = text.replace(/\n/g, " ");
         
         let type = "paragraph";
@@ -52,11 +92,14 @@ function parseDocument(raw: string) {
         }
 
         paragraphs.push({ 
-            id: index + 1,
+            id: globalIndex++,
             text,
-            type
+            type, 
+            page: null
         }); 
     });
+
+}
 
     // Remove duplicates
     const seen = new Set<string>(); 
@@ -104,6 +147,15 @@ app.post("/extract", upload.single("file"), async (req: any, res: any) => {
     try { 
         const file = req.file?.buffer; 
 
+        const uploadedFile = req.file; 
+
+        const document = { 
+            filename: uploadedFile.originalname, 
+            mimeType: uploadedFile.mimetype, 
+            size: uploadedFile.size, 
+            processedAt: new Date().toISOString()
+        }
+
         if (!file) {
             return res.status(400).json({ error: "No file uploaded" });
         }
@@ -123,7 +175,9 @@ app.post("/extract", upload.single("file"), async (req: any, res: any) => {
 
         const result = parseDocument(raw);
 
-        res.json(result);
+        res.json({
+            document,
+            content: result});
     } catch (err: any) {
         res.status(500).json({ error: err.message });
     } 
